@@ -1,0 +1,255 @@
+﻿<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>Software Store</title>
+		<link rel="shortcut icon" type="image/png" href="https://firebasestorage.googleapis.com/v0/b/assignment-nghiapqps03124.appspot.com/o/software.png?alt=media&token=422bca22-b458-49b8-bd9c-f300b1bc112a" />
+		<link rel="stylesheet" href="css/admin.css">
+	</head>
+	<body>
+		<section>
+			<div id="list-item">
+				
+			</div>
+		</section>
+		
+		<div id="myModal" class="modal">
+			<div class="modal-content">
+				<div class="modal-header">
+					<span class="close">×</span>
+					Thêm sản phẩm
+				</div>
+			<div class="modal-body">
+				<div>
+					<label for="username">Mã sản phẩm</label> 
+					<br /> 
+					<input type="text" id="masanpham">
+				</div>
+				<br /> 
+				<div>
+					<label for="password">Tên sản phẩm</label>
+					<br />
+					<input type="text" id="tensanpham"> 
+				</div>
+				<br /> 
+				<div>
+					<label for="password">Mô tả sản phẩm</label>
+					<br />
+					<textarea rows="4" cols="50" id="mota"></textarea> 
+				</div>
+				<br /> 
+				<div>
+					<label for="password">Giá</label>
+					<br />
+					<input type="text" id="gia"> 
+				</div>
+				<br /> 
+				<div>
+					<input type="file" id="file" > 
+				</div>
+				<br />
+				<div>
+					<button type="button" id="SubmitButton" onclick="AddData();">Xác nhận</button>
+					<button type="button" id="ResetButton" onclick="">Xóa</button>
+				</div>
+				<br />
+				<div id="myProgress">
+				  <div id="myBar">
+					<div id="label">0%</div>
+				  </div>
+				</div>
+				<br />
+			</div>
+			</div>
+		</div>
+		
+		<img src="images/logout.png" id="buttonlogout" onclick="logout();">
+		<img src="images/add.png" id="buttonadd" >
+	</body>
+	<script src="https://www.gstatic.com/firebasejs/3.1.0/firebase-app.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/3.1.0/firebase-auth.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/3.1.0/firebase-database.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/3.1.0/firebase-storage.js"></script>
+	<script>
+		// Initialize Firebase
+		var config = {
+			apiKey: "AIzaSyC3XSc2ifCPghMtvkph1sNu4XdEt9Cn78g",
+			authDomain: "assignment-nghiapqps03124.firebaseapp.com",
+			databaseURL: "https://assignment-nghiapqps03124.firebaseio.com",
+			storageBucket: "assignment-nghiapqps03124.appspot.com",
+		};
+		firebase.initializeApp(config);
+		
+		firebase.auth().onAuthStateChanged(function(user) {
+		if (user) {
+			console.log("Đã đăng nhập");
+		} else {
+			console.log("Không có đăng nhập !");
+			location = "index.html";
+		}
+	    });
+		
+		var commentsRef = firebase.database().ref('product');
+		var listItem = document.getElementById("list-item");
+		
+		commentsRef.on('child_added', function(data) {
+		  listItem.innerHTML += '<div class="card">'
+				  +'<img src="'+data.val().imagesproduct+'">'
+				  +'<div class="container">'
+					+'<h4><b>'+data.val().nameproduct+'</b></h4>'
+					+'<p>'+data.val().price+' USD</p>'
+				  +'</div>'
+				  +'<div class="control">'
+					+'<img src="images/iconview.png" >'
+					+'<img src="images/iconedit.png" >'
+					+'<img src="images/icondelete.png" onclick="deleteData(\''+data.key+'\');" >'
+				  +'</div>'
+				+'</div>';
+		});
+		
+		function loadItem(){
+			var listLoad = "";
+		
+			commentsRef.on('child_added', function(data) {
+			  listLoad += '<div class="card">'
+					  +'<img src="'+data.val().imagesproduct+'">'
+					  +'<div class="container">'
+						+'<h4><b>'+data.val().nameproduct+'</b></h4>'
+						+'<p>'+data.val().price+' USD</p>'
+					  +'</div>'
+					  +'<div class="control">'
+						+'<img src="images/iconview.png" >'
+						+'<img src="images/iconedit.png" >'
+						+'<img src="images/icondelete.png" onclick="deleteData(\''+data.key+'\');" >'
+					  +'</div>'
+					+'</div>';
+			});
+			listItem.innerHTML = listLoad;
+		}
+		
+		function deleteData(datakey){
+			firebase.database().ref('product/'+datakey).remove();
+			loadItem();
+		}
+		
+		function logout(){
+			firebase.auth().signOut().then(function() {
+			  location = "index.html";
+			}, function(error) {
+			  // An error happened.
+			});
+		}
+		
+		function AddData(){
+			var elem = document.getElementById("myBar");
+		
+			var id = document.getElementById("masanpham").value;
+			var name = document.getElementById("tensanpham").value;
+			var describe = document.getElementById("mota").value;
+			var price = document.getElementById("gia").value;
+			
+			var storageRef = firebase.storage().ref();
+			
+			// File or Blob named mountains.jpg
+			var file = document.getElementById("file").files[0];
+
+			// Create the file metadata
+			var metadata = {
+			  contentType: 'image/jpeg'
+			};
+
+			// Upload file and metadata to the object 'images/mountains.jpg'
+			var uploadTask = storageRef.child('images/' + file.name).put(file, metadata);
+
+			// Listen for state changes, errors, and completion of the upload.
+			uploadTask.on(firebase.storage.TaskEvent.STATE_CHANGED, // or 'state_changed'
+			  function(snapshot) {
+				// Get task progress, including the number of bytes uploaded and the total number of bytes to be uploaded
+				var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+				console.log('Upload is ' + progress + '% done');
+				elem.style.width = progress + '%';
+				document.getElementById("label").innerHTML = progress * 1  + '%';
+				switch (snapshot.state) {
+				  case firebase.storage.TaskState.PAUSED: // or 'paused'
+					console.log('Upload is paused');
+					break;
+				  case firebase.storage.TaskState.RUNNING: // or 'running'
+					console.log('Upload is running');
+					break;
+				}
+			  }, function(error) {
+			  switch (error.code) {
+				case 'storage/unauthorized':
+				  // User doesn't have permission to access the object
+				  break;
+
+				case 'storage/canceled':
+				  // User canceled the upload
+				  break;
+
+				case 'storage/unknown':
+				  // Unknown error occurred, inspect error.serverResponse
+				  break;
+			  }
+			}, function() {
+			  // Upload completed successfully, now we can get the download URL
+			  var downloadURL = uploadTask.snapshot.downloadURL;
+			  
+			  firebase.database().ref('product').push({
+				idproduct: id,
+				nameproduct: name,
+				describe: describe,
+				price: price,
+				imagesproduct : downloadURL
+			  });
+			  
+			  document.getElementById("masanpham").value="";
+			  document.getElementById("tensanpham").value="";
+			  document.getElementById("mota").value="";
+			  document.getElementById("gia").value="";
+			  document.getElementById("file").value="";
+			  modal.style.display = "none";
+			});
+		}
+		
+		/*
+			  var postData = {
+				idproduct: id,
+				nameproduct: name,
+				describe: describe,
+				price: price,
+				imagesproduct : downloadURL
+			  };
+			  
+			  var newPostKey = firebase.database().ref().child('product').push().key;
+			  
+			  var updates = {};
+			  updates['/product/' + newPostKey] = postData;
+			  firebase.database().ref().update(updates);*/
+		
+		//Dialog add
+		var modal = document.getElementById('myModal');
+
+		var btn = document.getElementById("buttonadd");
+
+		var span = document.getElementsByClassName("close")[0];
+
+		btn.onclick = function() {
+			modal.style.display = "block";
+		}
+
+		span.onclick = function() {
+			modal.style.display = "none";
+		}
+
+		window.onclick = function(event) {
+			if (event.target == modal) {
+				modal.style.display = "none";
+			}
+		}
+		
+		//--End Dialog add--
+	</script>
+	
+
+</html>
